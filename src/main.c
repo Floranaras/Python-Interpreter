@@ -132,7 +132,12 @@ static int compile_and_run(const char *source)
 		goto done;
 	}
 
-	interpreter_evaluate(interp, ast);
+	struct value final_res = interpreter_evaluate(interp, ast);
+
+	if (final_res.type == VALUE_STRING && final_res.data.string) {
+		free(final_res.data.string);
+	}
+
 	interpreter_destroy(interp);
 
 done:

@@ -259,7 +259,13 @@ static int push_indent(struct lexer *lex, int spaces)
  */
 static struct token handle_line_start(struct lexer *lex, int *emitted)
 {
-	struct token dummy = make_tok(TOKEN_EOF, "EOF", lex->line, 1);
+	struct token dummy = {
+		.type = TOKEN_EOF,
+		.value = NULL,
+		.line = lex->line,
+		.column = 1,
+		.number = 0.0
+	}; 
 	int tmp_pos;
 	int spaces;
 	int current;

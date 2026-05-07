@@ -1,6 +1,6 @@
 CC      = gcc
 CFLAGS  = -Wall -Wextra -std=c99 -O2 -I include/
-DBFLAGS = -Wall -Wextra -std=c99 -g  -fsanitize=address -I include/
+DBFLAGS = -Wall -Wextra -std=c99 -g -fsanitize=address -fno-omit-frame-pointer -I include/
 
 TARGET  = python-compiler
 UNITY   = python_compiler.c
@@ -11,10 +11,10 @@ HDRS    = $(wildcard include/*.h)
 
 all: $(TARGET)
 
-$(TARGET): $(UNITY) $(SRCS) $(HDRS) | build/
+$(TARGET): $(UNITY) $(SRCS) $(HDRS)
 	$(CC) $(CFLAGS) -o $@ $(UNITY)
 
-debug: $(UNITY) $(SRCS) $(HDRS) | build/
+debug: $(UNITY) $(SRCS) $(HDRS)
 	$(CC) $(DBFLAGS) -o $(TARGET) $(UNITY)
 
 test: all
@@ -46,4 +46,4 @@ compdb:
 	@echo "wrote compile_commands.json ($(PWD))"
 
 clean:
-	rm python-compiler
+	rm -f $(TARGET) 

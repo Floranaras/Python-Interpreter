@@ -94,27 +94,32 @@ static struct value string_concat(const char *a, const char *b)
 static struct value eval_binary_op(struct interpreter *interp,
 				   struct ast_node *node)
 {
-	struct value left;
-	struct value right;
-
-	left  = interpreter_evaluate(interp, node->data.binary_op.left);
-	right = interpreter_evaluate(interp, node->data.binary_op.right);
+	struct value left = interpreter_evaluate(interp, node->data.binary_op.left);
+	struct value right = interpreter_evaluate(interp, node->data.binary_op.right);
+	struct value result = val_none();
 
 	if (left.type == VALUE_NUMBER && right.type == VALUE_NUMBER)
-		return number_op(node->data.binary_op.op,
-				 left.data.number,
-				 right.data.number,
-				 node->line_number);
+		result = number_op(node->data.binary_op.op, 
+				   left.data.number,
+				   right.data.number, 
+				   node->line_number);
 
-	if (left.type  == VALUE_STRING  &&
+	else if (left.type  == VALUE_STRING  &&
 	    right.type == VALUE_STRING  &&
 	    node->data.binary_op.op == TOKEN_PLUS)
-		return string_concat(left.data.string,
+		result = string_concat(left.data.string,
 				     right.data.string);
-
-	fprintf(stderr, "runtime error: type mismatch at line %d\n",
+	else
+		fprintf(stderr, "runtime error: type mismatch at line %d\n",
 		node->line_number);
-	return val_none();
+
+	if (left.type == VALUE_STRING)
+		free(left.data.string);
+
+	if (right.type == VALUE_STRING)
+		free(right.data.string);
+
+	return result;
 }
 
 static struct value eval_unary_op(struct interpreter *interp,
@@ -326,8 +331,14 @@ struct value interpreter_evaluate(struct interpreter *interp,
 	case AST_IDENTIFIER:
 		sym = symbol_table_find(interp->current_scope,
 					node->data.identifier.name);
-		if (sym)
+		if (sym) {
+
+			if (sym->value.type == VALUE_STRING)
+				return val_string(sym->value.data.string);
+
 			return sym->value;
+		}
+
 		fprintf(stderr,
 			"runtime error: undefined variable '%s' "
 			"at line %d\n",
@@ -403,6 +414,10 @@ struct value interpreter_evaluate(struct interpreter *interp,
 		value = interpreter_evaluate(
 			interp, node->data.print_stmt.value);
 		print_value(value);
+
+		if (value.type == VALUE_STRING) 
+			free(value.data.string);
+
 		return val_none();
 
 	case AST_BLOCK:
